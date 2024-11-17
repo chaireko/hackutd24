@@ -10,7 +10,7 @@ export default function Home() {
 
   const handleBackendCall = async () => {
     try {
-      const res = await fetch('/api/hello');
+      const res = await fetch('/api/hello_world');
       const data = await res.json();
       setResponse(data.message);
     } catch (error) {
