@@ -1,5 +1,40 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import {useRef, useState, useEffect} from 'react';
+
+{/*export default function WebcamPage() {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isStreamActive, setIsStreamActive] = useState(false)
+
+  const startWebcam = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        setIsStreamActive(true)
+        setError(null)
+      }
+    } catch (err) {
+      console.error('Error accessing the webcam:', err)
+      setError('Unable to access the webcam. Please make sure you have a webcam connected and you have granted permission to use it.')
+    }
+  }
+
+  const stopWebcam = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
+      tracks.forEach(track => track.stop())
+      videoRef.current.srcObject = null
+      setIsStreamActive(false)
+    }
+  }
+
+  useEffect(() => {
+        return () => {
+      stopWebcam()
+    }
+  }, []) */}
 
 export default function Page() {
   return (

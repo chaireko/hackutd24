@@ -1,19 +1,20 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
+from dotenv import load_dotenv
+import os
+import requests
 
-#GIT COMMANDS (uwu)
-#git add . 
-#git status
-#git commit -m "name"
-#git push
-#git status
-#git log
-#git pull
-#git checkout -b "name" (create branch)
-#git push origin Niki-dev
-#git pull origin main
-#
+load_dotenv()
+
+#HOW DO I MAKE THIS API CALL
+pinata_api_key = os.getenv('PINATA_API_KEY')
+pinata_api_secret = os.getenv('PINATA_API_SECRET')
+# client = Pinata(api_key=pinata_api_key, api_secret=pinata_api_secret)
+
+# Ensure save_words.txt exists
+if not os.path.exists('save_words.txt'):
+    open('save_words.txt', 'w').close()
 
 app = Flask(__name__)
 CORS(app)
@@ -27,6 +28,31 @@ EMOTIONS = [
 progress = {
     "total_emotions_practiced": 0
 }
+
+
+#---------------------API CALL TO FETCH FILES-------------------
+@app.route('/api/get_pinata_files', methods=['GET'])
+def get_pinata_files():
+    try:
+        # Replace with your actual Pinata API key and secret
+        pinata_api_key = os.getenv('PINATA_API_KEY')
+        pinata_api_secret = os.getenv('PINATA_API_SECRET')
+
+        # Make the API call to Pinata to retrieve the pinned files
+        headers = {
+            'Authorization': f'Bearer {pinata_api_key}'
+        }
+        response = requests.get("https://api.pinata.cloud/data/pinnedData", headers=headers)
+
+        if response.status_code == 200:
+            files_data = response.json()
+            # If needed, process the data here, e.g., extract only the necessary info
+            return jsonify(files_data), 200
+        else:
+            return jsonify({"error": "Failed to retrieve files from Pinata"}), 400
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 #---------------------INITIAL TEST ROUTES-------------------
 def fakeData():
@@ -103,6 +129,7 @@ def get_insights():
         "totalEmotionsPracticed": progress["total_emotions_practiced"]
     }
     return jsonify(insights)
+
 
 # -------------- RUN THE SERVER --------------
 if __name__ == "__main__":
