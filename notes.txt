@@ -1,0 +1,11 @@
+#GIT COMMANDS (uwu)
+#git add . 
+#git status
+#git commit -m "name"
+#git push
+#git status
+#git log
+#git pull
+#git checkout -b "name" (create branch)
+#git push origin Niki-dev
+#git pull origin main
