@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
+import * as tf from "@tensorflow/tfjs";
 
 export default function WebcamPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -32,7 +33,7 @@ export default function WebcamPage() {
   }
 
   useEffect(() => {
-    return () => {
+        return () => {
       stopWebcam()
     }
   }, [])
