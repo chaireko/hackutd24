@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import json
 
 #GIT COMMANDS (uwu)
@@ -15,6 +16,7 @@ import json
 #
 
 app = Flask(__name__)
+CORS(app)
 user_data = {}
 
 EMOTIONS = [
@@ -33,6 +35,7 @@ def fakeData():
 #Sample route that gets request from frontend button and returns a message
 @app.route('/api/hello_world', methods=['GET'])
 def hello_world():
+    print("WE ARE HERE")
     return jsonify({"message": "Hello World"}) 
 
 #start collection
