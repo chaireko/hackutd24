@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function Page() {
   return (
@@ -16,6 +17,16 @@ export default function Page() {
       alt="Background Overlay"
       className="absolute inset-0 object-cover w-full h-full opacity-30"/>
       </div> 
+      <img 
+      src="landing_bottom_left.png"
+      alt="border"
+      className="absolute bottom-0 left-0 p-4 w-64 h-auto"
+      />
+      <img 
+      src="landing_top_right.png"
+      alt="border"
+      className="absolute top-0 right-0 p-4 w-64 h-auto"
+      />
       <main className="container mx-auto px-4 py-16">
       <div className="w-full h-48 mb-8">
           <svg viewBox="0 0 1000 100" className="w-full h-full">
@@ -32,10 +43,13 @@ export default function Page() {
           </svg>
         </div>
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+        <Link href="/webcam">
           <Button variant="outline" className="bg-white text-[#688BFF] hover:bg-blue-100 hover:text-[#688BFF] font-extrabold drop-shadow">
             play
           </Button>
+        </Link>
         </div>
+  
       <div className="absolute top-0 left-0 p-4">
         <img 
         src="lilypad_topleft.png"
@@ -64,7 +78,7 @@ export default function Page() {
         className="object-contain w-20 h-20 -rotate-12"
         />
       </div>
-      <div className="border-l-8 border-white h-80 my-8"></div>
+
       </main>
     </div>
   )
