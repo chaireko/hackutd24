@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import json
 from dotenv import load_dotenv
 import os
@@ -16,6 +17,8 @@ if not os.path.exists('save_words.txt'):
     open('save_words.txt', 'w').close()
 
 app = Flask(__name__)
+CORS(app)
+user_data = {}
 
 EMOTIONS = [
     "Happy", "Sad", "Angry", "Surprised", "Neutral",
@@ -58,6 +61,7 @@ def fakeData():
 #Sample route that gets request from frontend button and returns a message
 @app.route('/api/hello_world', methods=['GET'])
 def hello_world():
+    print("WE ARE HERE")
     return jsonify({"message": "Hello World"}) 
 
 #start collection

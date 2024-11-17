@@ -1,9 +1,7 @@
-'use client'
-
-import { useRef, useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import * as tf from "@tensorflow/tfjs";
 
+<<<<<<< HEAD
 export default function WebcamPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [error, setError] = useState<string | null>(null)
@@ -38,32 +36,74 @@ export default function WebcamPage() {
     }
   }, [])
 
+=======
+export default function Page() {
+>>>>>>> 9eafabb4cdf65d5c2ccce09c0882e76771ae2c39
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-      <h1 className="text-2xl font-bold mb-4">Webcam Page</h1>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-      <div className="relative">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          className="rounded-lg shadow-lg max-w-full h-auto"
-          style={{ display: isStreamActive ? 'block' : 'none' }}
+    <div 
+    className="min-h-screen text-white font-inter"
+    style={{
+      background: 'linear-gradient(180deg, #6893FF 0%, #72FFD2 100%)'
+    }}
+  >
+    <div
+    className="absolute inset-0 bg-cover bg-center"
+    >
+      <img    
+      src="ripple.png"
+      alt="Background Overlay"
+      className="absolute inset-0 object-cover w-full h-full opacity-30"/>
+      </div> 
+      <main className="container mx-auto px-4 py-16">
+      <div className="w-full h-48 mb-8">
+          <svg viewBox="0 0 1000 100" className="w-full h-full">
+            <path
+              id="curve"
+              d="M0,100 Q500,20 1000,100"
+              fill="transparent"
+            />
+            <text className="fill-current text-8xl font-extrabold drop-shadow-lg">
+              <textPath xlinkHref="#curve" startOffset="50%" textAnchor="middle">
+                ECHO
+              </textPath>
+            </text>
+          </svg>
+        </div>
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+          <Button variant="outline" className="bg-white text-[#688BFF] hover:bg-blue-100 hover:text-[#688BFF] font-extrabold drop-shadow">
+            play
+          </Button>
+        </div>
+      <div className="absolute top-0 left-0 p-4">
+        <img 
+        src="lilypad_topleft.png"
+        alt="Lilypad"
+        className="object-contain w-40 h-40"
         />
-        {!isStreamActive && (
-          <div className="w-[640px] h-[480px] bg-gray-200 rounded-lg flex items-center justify-center">
-            <p className="text-gray-500">Webcam is off</p>
-          </div>
-        )}
       </div>
-      <div className="mt-4">
-        <Button onClick={startWebcam} disabled={isStreamActive} className="mr-2">
-          Start Webcam
-        </Button>
-        <Button onClick={stopWebcam} disabled={!isStreamActive} variant="outline">
-          Stop Webcam
-        </Button>
+      <div className="absolute top-0 left-0 p-4">
+      <img
+        src="flower_lilypad.png"
+        alt="flower"
+        className="object-contain w-20 h-20 -rotate-45"
+        />
       </div>
+      <div className="absolute bottom-0 right-0 p-4">
+        <img 
+        src="lilypad_topleft.png"
+        alt="Lilypad"
+        className="object-contain w-40 h-40 rotate-180"
+        />
+      </div>
+      <div className="absolute bottom-16 right-8 p-4">
+      <img
+        src="flower_lilypad.png"
+        alt="flower"
+        className="object-contain w-20 h-20 -rotate-12"
+        />
+      </div>
+      <div className="border-l-8 border-white h-80 my-8"></div>
+      </main>
     </div>
   )
 }
