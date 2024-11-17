@@ -1,20 +1,23 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import json
+#import json
 from dotenv import load_dotenv
 import os
 import requests
 
 load_dotenv()
 
+progress = {
+    "total_emotions_practiced": 0,
+    "correct_emotions": 0,
+    "incorrect_emotions": 0,
+    "emotion_stats": {}
+}
+
 #HOW DO I MAKE THIS API CALL
 pinata_api_key = os.getenv('PINATA_API_KEY')
 pinata_api_secret = os.getenv('PINATA_API_SECRET')
 # client = Pinata(api_key=pinata_api_key, api_secret=pinata_api_secret)
-
-# Ensure save_words.txt exists
-if not os.path.exists('save_words.txt'):
-    open('save_words.txt', 'w').close()
 
 app = Flask(__name__)
 CORS(app)
@@ -29,35 +32,62 @@ progress = {
     "total_emotions_practiced": 0
 }
 
-
+#CD: c2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD
 #---------------------API CALL TO FETCH FILES-------------------
 @app.route('/api/get_pinata_files', methods=['GET'])
 def get_pinata_files():
     try:
-        # Replace with your actual Pinata API key and secret
+        # Load API keys from environment variables
         pinata_api_key = os.getenv('PINATA_API_KEY')
         pinata_api_secret = os.getenv('PINATA_API_SECRET')
 
-        # Make the API call to Pinata to retrieve the pinned files
+        # API endpoint to list pinned items
+        url = "https://api.pinata.cloud/data/pinList"
+
         headers = {
-            'Authorization': f'Bearer {pinata_api_key}'
+            "pinata_api_key": pinata_api_key,
+            "pinata_secret_api_key": pinata_api_secret,
         }
-        response = requests.get("https://api.pinata.cloud/data/pinnedData", headers=headers)
+
+        # Make the API call to Pinata
+        response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
             files_data = response.json()
-            # If needed, process the data here, e.g., extract only the necessary info
-            return jsonify(files_data), 200
+
+            # Extract and format file information
+            rows = []
+            for file in files_data.get('rows', []):
+                ipfs_hash = file.get('ipfs_pin_hash')
+                file_name = file.get('metadata', {}).get('name', 'Unknown')
+
+                # Skip directories or entries without a valid hash
+                if ipfs_hash and not file.get('isDirectory', False):
+                    # Infer the answer based on the file name (e.g., "happy_1.png" -> "Happy")
+                    if "happy" in file_name.lower():
+                        answer = "Happy"
+                    elif "sad" in file_name.lower():
+                        answer = "Sad"
+                    elif "angry" in file_name.lower():
+                        answer = "Angry"
+                    else:
+                        answer = "Unknown"
+
+                    rows.append({
+                        "ipfs_hash": ipfs_hash,
+                        "file_name": file_name,
+                        "answer": answer,  # Include the answer in the response
+                    })
+
+            return jsonify({"rows": rows}), 200
         else:
-            return jsonify({"error": "Failed to retrieve files from Pinata"}), 400
+            return jsonify({"error": f"Failed to retrieve files: {response.text}"}), response.status_code
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-#---------------------INITIAL TEST ROUTES-------------------
-def fakeData():
-    return "Happy"
 
+#---------------------INITIAL TEST ROUTES-------------------
 #Sample route that gets request from frontend button and returns a message
 @app.route('/api/hello_world', methods=['GET'])
 def hello_world():

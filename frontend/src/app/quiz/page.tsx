@@ -62,37 +62,39 @@ export default function QuizPage() {
  useEffect(() => {
   const fetchPinataFiles = async () => {
     try {
-      const response = await fetch('/api/get_pinata_files')
-      const data = await response.json()
+      const response = await fetch(`http://localhost:5000/api/get_pinata_files`); //ERROR HERE
+      const data = await response.json();
 
-      // Assuming `data` contains files with IPFS hashes
-      const fetchedQuestions = data.rows.map((file: any) => ({
-        image: `https://gateway.pinata.cloud/ipfs/${file.ipfs_hash}`,
-        options: ['Happy', 'Sad', 'Angry'], // You can adjust this based on your needs
-        answer: 'Happy', // Adjust this logic to match the correct answer for each image
-      }))
+      if (data.rows) {
+        // Dynamically create questions from Pinata file data
+        const fetchedQuestions = data.rows.map((file: any) => ({
+          image: `https://gateway.pinata.cloud/ipfs/${file.ipfs_hash}`,
+          options: ['Happy', 'Sad', 'Angry'], // Default options
+          answer: file.emotion, // Adjust to reflect the actual answer
+        }));
 
-      setQuestions(fetchedQuestions)
+        setQuestions(fetchedQuestions);
+      }
     } catch (e) {
-      console.error('Error fetching Pinata files:', e)
+      console.error('Error fetching Pinata files:', e);
     }
-  }
+  };
 
-  fetchPinataFiles()
-}, [])
+  fetchPinataFiles();
+}, []);
 
 const handleAnswer = (option: string) => {
   if (option === questions[currentQuestionIndex].answer) {
-    setScore(score + 1)
+    setScore(score + 1);
   }
 
-  const nextQuestion = currentQuestionIndex + 1
+  const nextQuestion = currentQuestionIndex + 1;
   if (nextQuestion < questions.length) {
-    setCurrentQuestionIndex(nextQuestion)
+    setCurrentQuestionIndex(nextQuestion);
   } else {
-    setQuizComplete(true)
+    setQuizComplete(true);
   }
-}
+};
 
 return (
   <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
@@ -106,9 +108,9 @@ return (
         <Button
           className="mt-4"
           onClick={() => {
-            setCurrentQuestionIndex(0)
-            setScore(0)
-            setQuizComplete(false)
+            setCurrentQuestionIndex(0);
+            setScore(0);
+            setQuizComplete(false);
           }}
         >
           Retry Quiz
@@ -116,7 +118,7 @@ return (
       </div>
     ) : (
       <div>
-        {questions.length > 0 && (
+        {questions.length > 0 ? (
           <>
             <img
               src={questions[currentQuestionIndex].image}
@@ -135,79 +137,11 @@ return (
               ))}
             </div>
           </>
+        ) : (
+          <p>Loading questions...</p>
         )}
       </div>
     )}
   </div>
-)
+);
 }
-
-
-
-
-
-
-
-
-// export default function QuizPage() {
-//   const [questions, setQuestions] = useState<Question[]>([])
-//   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0)
-//   const [score, setScore] = useState<number>(0)
-//   const [quizComplete, setQuizComplete] = useState<boolean>(false)
-
-//   const handleAnswer = (option: string) => {
-//     if (option === questions[currentQuestionIndex].answer) {
-//       setScore(score + 1)
-//     }
-
-//     const nextQuestion = currentQuestionIndex + 1
-//     if (nextQuestion < questions.length) {
-//       setCurrentQuestionIndex(nextQuestion)
-//     } else {
-//       setQuizComplete(true)
-//     }
-//   }
-
-//   return (
-//     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-//       <h1 className="text-2xl font-bold mb-4">Emotion Quiz</h1>
-//       {quizComplete ? (
-//         <div>
-//           <h2 className="text-lg font-semibold">Quiz Complete!</h2>
-//           <p>
-//             Your score: {score} / {questions.length}
-//           </p>
-//           <Button
-//             className="mt-4"
-//             onClick={() => {
-//               setCurrentQuestionIndex(0)
-//               setScore(0)
-//               setQuizComplete(false)
-//             }}
-//           >
-//             Retry Quiz
-//           </Button>
-//         </div>
-//       ) : (
-//         <div>
-//           <img
-//             src={questions[currentQuestionIndex].image}
-//             alt="Facial Expression"
-//             className="rounded-lg shadow-lg max-w-full h-auto mb-4"
-//           />
-//           <div className="flex flex-col items-center">
-//             {questions[currentQuestionIndex].options.map((option, index) => (
-//               <Button
-//                 key={index}
-//                 className="mb-2 w-64"
-//                 onClick={() => handleAnswer(option)}
-//               >
-//                 {option}
-//               </Button>
-//             ))}
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   )
-// }
