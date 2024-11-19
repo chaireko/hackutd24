@@ -9,6 +9,9 @@ export default {
   ],
   theme: {
   	extend: {
+		backgroundImage: {
+			ripple: 'url(/ripple-animation.gif)',
+		},
 		fontFamily: {
 			inter: ['var(--font-inter)'],
 		},

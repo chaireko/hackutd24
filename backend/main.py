@@ -4,8 +4,14 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 import requests
-
+import numpy as np
+from deepface import DeepFace
+import base64
+from io import BytesIO
+from PIL import Image
+import cv2
 load_dotenv()
+import random
 
 progress = {
     "total_emotions_practiced": 0,
@@ -40,27 +46,38 @@ def get_pinata_files():
         # Load API keys from environment variables
         pinata_api_key = os.getenv('PINATA_API_KEY')
         pinata_api_secret = os.getenv('PINATA_API_SECRET')
-
+        pinata_jwt = os.getenv('PINATA_JWT')
         # API endpoint to list pinned items
-        url = "https://api.pinata.cloud/data/pinList"
 
-        headers = {
-            "pinata_api_key": pinata_api_key,
-            "pinata_secret_api_key": pinata_api_secret,
-        }
+        url = "https://api.pinata.cloud/v3/files"
+
+        print("Bearer " + str(pinata_jwt))
+        headers = {"Authorization": "Bearer " + str(pinata_jwt)}
+
+        response = requests.request("GET", url, headers=headers)
+
+        print(response.data.files)
+        files = response.data.files
+        if files:
+            random_num = random.randint(0, 8)
+            random_file = files[random_num]
+            return random_file
+        
 
         # Make the API call to Pinata
         response = requests.get(url, headers=headers)
+        print(response.text)
 
         if response.status_code == 200:
             files_data = response.json()
+
+            print(files_data)
 
             # Extract and format file information
             rows = []
             for file in files_data.get('rows', []):
                 ipfs_hash = file.get('ipfs_pin_hash')
                 file_name = file.get('metadata', {}).get('name', 'Unknown')
-
                 # Skip directories or entries without a valid hash
                 if ipfs_hash and not file.get('isDirectory', False):
                     # Infer the answer based on the file name (e.g., "happy_1.png" -> "Happy")
@@ -159,7 +176,82 @@ def get_insights():
         "totalEmotionsPracticed": progress["total_emotions_practiced"]
     }
     return jsonify(insights)
+@app.route('/classify_emotion', methods=['POST'])
+def classify_emotion():
+    try:
+        data = request.get_json()
+        app.logger.debug(f"Received data: {data}")
+        if not data or 'image' not in data:
+            app.logger.error("No image provided in the request")
+            return jsonify({'error': 'No image provided'}), 400
 
+        img_data = data['image']
+
+        # Handle base64 data URL
+        if ',' in img_data:
+            header, encoded = img_data.split(',', 1)
+        else:
+            encoded = img_data
+
+        # Decode the base64 image
+        img_bytes = base64.b64decode(encoded)
+        image = Image.open(BytesIO(img_bytes)).convert('RGB')
+        img_array = np.array(image)
+
+        # Verify img_array dtype
+        app.logger.debug(f"img_array dtype: {img_array.dtype}")
+        if img_array.dtype != np.uint8:
+            img_array = img_array.astype(np.uint8)
+            app.logger.debug("Converted img_array to uint8")
+
+        # Convert RGB to BGR for OpenCV
+        img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+
+        # Verify img_bgr dtype
+        app.logger.debug(f"img_bgr dtype: {img_bgr.dtype}")
+        if img_bgr.dtype != np.uint8:
+            img_bgr = img_bgr.astype(np.uint8)
+            app.logger.debug("Converted img_bgr to uint8")
+
+        # Analyze emotion using DeepFace
+        analysis = DeepFace.analyze(img_bgr, actions=['emotion'], enforce_detection=True)
+
+        # Process the analysis result
+        emotions_detected = []
+
+        if isinstance(analysis, list):
+            # Multiple faces detected
+            for idx, face_analysis in enumerate(analysis):
+                emotion = face_analysis.get('dominant_emotion', 'Unknown')
+                confidence = face_analysis.get('emotion', {}).get(emotion, 0)
+                emotions_detected.append({
+                    'face': idx + 1,
+                    'emotion': emotion,
+                    'confidence': confidence
+                })
+        elif isinstance(analysis, dict):
+            # Single face detected
+            emotion = analysis.get('dominant_emotion', 'Unknown')
+            confidence = analysis.get('emotion', {}).get(emotion, 0)
+            emotions_detected.append({
+                'face': 1,
+                'emotion': emotion,
+                'confidence': confidence
+            })
+        else:
+            # Unexpected type
+            app.logger.error(f"Unexpected analysis type: {type(analysis)}")
+            return jsonify({'error': 'Unexpected response from emotion analysis'}), 500
+
+        app.logger.debug(f"Detected emotions: {emotions_detected}")
+
+        return jsonify({
+            'emotions': emotions_detected
+        }), 200
+
+    except Exception as e:
+        app.logger.exception(f"Error processing image: {e}")
+        return jsonify({'error': 'Failed to process the image'}), 500
 
 # -------------- RUN THE SERVER --------------
 if __name__ == "__main__":

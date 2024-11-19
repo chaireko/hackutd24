@@ -9,72 +9,71 @@ interface Question {
   answer: string
 }
 
-const questions: Question[] = [
+var questions: Question[] = [
   {
-    image: 'https://gateway.pinata.cloud/ipfs/<c2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD>/happy_1.png',
+    image: 'https://gateway.pinata.cloud/ipfs/Qmc2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD/happy_1.jpg',
     options: ['Happy', 'Sad', 'Angry'],
     answer: 'Happy',
   },
   {
-    image: 'https://gateway.pinata.cloud/ipfs/<c2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD>/happy_2.png',
+    image: 'https://gateway.pinata.cloud/ipfs/Qmc2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD/happy_2.jpeg',
     options: ['Happy', 'Sad', 'Angry'],
     answer: 'Happy',
   },
   {
-    image: 'https://gateway.pinata.cloud/ipfs/<c2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD>/happy_3.png',
+    image: 'https://gateway.pinata.cloud/ipfs/Qmc2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD/happy_3.png',
     options: ['Happy', 'Sad', 'Angry'],
     answer: 'Happy',
   },
   {
-    image: 'https://gateway.pinata.cloud/ipfs/<c2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD>/mad_1.png',
+    image: 'https://gateway.pinata.cloud/ipfs/Qmc2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD/mad_1.jpg',
     options: ['Happy', 'Sad', 'Angry'],
     answer: 'Angry',
   },
   {
-    image: 'https://gateway.pinata.cloud/ipfs/<c2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD>/mad_2.png',
+    image: 'https://gateway.pinata.cloud/ipfs/Qmc2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD/mad_2.jpg',
     options: ['Happy', 'Sad', 'Angry'],
     answer: 'Angry',
   },
   {
-    image: 'https://gateway.pinata.cloud/ipfs/<c2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD>/mad_3.png',
+    image: 'https://gateway.pinata.cloud/ipfs/Qmc2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD/mad_3.jpg',
     options: ['Happy', 'Sad', 'Angry'],
     answer: 'Angry',
   },
   {
-    image: 'https://gateway.pinata.cloud/ipfs/<c2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD>/sad_1.png',
+    image: 'https://gateway.pinata.cloud/ipfs/Qmc2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD/sad_1.webp',
     options: ['Happy', 'Sad', 'Angry'],
     answer: 'Sad',
   },
   {
-    image: 'https://gateway.pinata.cloud/ipfs/<c2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD>/sad_3.png',
+    image: 'https://gateway.pinata.cloud/ipfs/Qmc2ktSiBa5nJqtMnpkrk5hbrNDntPGPyUcfQojtBiGqsD/sad_3.jpg',
     options: ['Happy', 'Sad', 'Angry'],
     answer: 'Sad',
   },
 ]
 
 export default function QuizPage() {
-  const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0)
   const [score, setScore] = useState<number>(0)
   const [quizComplete, setQuizComplete] = useState<boolean>(false)
+
+  useEffect(() => {
+    console.log(questions);
+  }, [questions]);
 
  // Fetch files from Pinata via the backend API
  useEffect(() => {
   const fetchPinataFiles = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/get_pinata_files`); //ERROR HERE
-      const data = await response.json();
-
-      if (data.rows) {
-        // Dynamically create questions from Pinata file data
-        const fetchedQuestions = data.rows.map((file: any) => ({
-          image: `https://gateway.pinata.cloud/ipfs/${file.ipfs_hash}`,
-          options: ['Happy', 'Sad', 'Angry'], // Default options
-          answer: file.emotion, // Adjust to reflect the actual answer
-        }));
-
-        setQuestions(fetchedQuestions);
+      function shuffle(array: any[]) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
       }
+
+      shuffle(questions);
+      
     } catch (e) {
       console.error('Error fetching Pinata files:', e);
     }
@@ -123,7 +122,7 @@ return (
             <img
               src={questions[currentQuestionIndex].image}
               alt="Facial Expression"
-              className="rounded-lg shadow-lg max-w-full h-auto mb-4"
+              className="rounded-lg shadow-lg h-auto mb-4 w-72"
             />
             <div className="flex flex-col items-center">
               {questions[currentQuestionIndex].options.map((option, index) => (

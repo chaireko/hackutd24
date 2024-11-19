@@ -2,13 +2,19 @@
 
 import { useRef, useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
+// import { Progress } from "@/components/ui/progress"
 import Script from 'next/script'
 
 export default function WebcamPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null) // Hidden canvas for capturing frames
   const [error, setError] = useState<string | null>(null)
   const [isStreamActive, setIsStreamActive] = useState(false)
+  const [chatResult, setChatResult] = useState<string>('');
+  
+  // State to store detected emotion
+  const [detectedEmotion, setDetectedEmotion] = useState<{ emotion: string, confidence: number } | null>(null)
 
   // Animation frame management
   const [currentEmotionIndex, setCurrentEmotionIndex] = useState(0)
@@ -43,6 +49,54 @@ export default function WebcamPage() {
   ]
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0)
 
+  // Function to capture a frame and send it to the backend
+  const captureAndClassifyFrame = async () => {
+    if (!videoRef.current || !canvasRef.current) return
+
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    const context = canvas.getContext('2d')
+
+    if (!context) {
+      // console.error('Unable to get canvas context')
+      return
+    }
+
+    // Set canvas dimensions to match video
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+
+    // Draw the current frame from the video onto the canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+    // Get the data URL of the image (base64 encoded)
+    const dataURL = canvas.toDataURL('image/jpeg')
+    try {
+      const response = await fetch('http://localhost:5000/classify_emotion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ image: dataURL })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        // console.error('Error from backend:', errorData)
+        return
+      }
+
+      const result = await response.json()
+      console.log(result.emotions[0])
+      setDetectedEmotion({
+        emotion: result.emotions[0].emotion,
+        confidence: result.emotions[0].confidence
+      })
+    } catch (err) {
+      // console.error('Error sending image to backend:', err)
+    }
+  }
+
   const startWebcam = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true })
@@ -52,7 +106,7 @@ export default function WebcamPage() {
         setError(null)
       }
     } catch (err) {
-      console.error('Error accessing the webcam:', err)
+      // console.error('Error accessing the webcam:', err)
       setError('Unable to access the webcam. Please make sure you have a webcam connected and you have granted permission to use it.')
     }
   }
@@ -63,8 +117,75 @@ export default function WebcamPage() {
       tracks.forEach(track => track.stop())
       videoRef.current.srcObject = null
       setIsStreamActive(false)
+      setDetectedEmotion(null) // Clear detected emotion
     }
   }
+
+  const handleChatRequest = async () => {
+    const payload = {
+      messages: [
+        {
+          role: "user",
+          content: "Give me a positive affirmation. Keep it to two sentences.",
+        },
+      ],
+    };
+
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error('');
+      }
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let chunk = '';
+
+      // Read the stream as it arrives
+      while (!done) {
+        const { value, done: doneReading } = await reader!.read();
+        done = doneReading;
+        // Convert the value from a Uint8Array to a string and append it to the chunk
+        chunk += decoder.decode(value, { stream: true });
+        
+        // Optionally, handle the chunk (e.g., display or process it)
+        // console.log(chunk);
+      }
+
+      // After the stream is fully read, handle the complete data
+      const chunks = chunk.split('\n');
+      const chunksJSON: any[] = [];
+
+      for (let i = 0; i < chunks.length; i++) {
+        let ck = chunks[i];
+        if (ck === "" || ck === "data: [DONE]" || ck == undefined) {
+          continue;
+        } else {
+          chunksJSON.push(JSON.parse(ck.split('data: ')[1]))
+        }
+      }
+
+      let chatResultTemp = '';
+      for (let i = 0; i < chunksJSON.length; i++) {
+        chatResultTemp += chunksJSON[i].choices[0].delta.content;
+      }
+
+      console.log(chatResultTemp)
+      setChatResult(chatResultTemp);
+
+    } catch (err: any) {
+      setError(err.message);  // Handle error
+    }
+  };
 
   // Handle emotion cycling
   useEffect(() => {
@@ -94,6 +215,12 @@ export default function WebcamPage() {
   }, [])
 
   useEffect(() => {
+    setInterval(() => {
+      handleChatRequest();
+    }, 5000)
+  }, []);
+
+  useEffect(() => {
     if (isStreamActive && videoContainerRef.current) {
       // @ts-ignore
       $(videoContainerRef.current).ripples({
@@ -111,6 +238,22 @@ export default function WebcamPage() {
     }
   }, [isStreamActive])
 
+  // Effect to start capturing and classifying frames when webcam is active
+  useEffect(() => {
+    let classifyInterval: NodeJS.Timeout
+
+    if (isStreamActive) {
+      // Start classifying frames every 5 seconds
+      classifyInterval = setInterval(() => {
+        captureAndClassifyFrame()
+      }, 1000) // Adjust interval as needed
+    }
+
+    return () => {
+      if (classifyInterval) clearInterval(classifyInterval)
+    }
+  }, [isStreamActive])
+
   return (
     <>
       <Script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js" />
@@ -120,19 +263,35 @@ export default function WebcamPage() {
         style={{
           background: 'linear-gradient(180deg, #6893FF 0%, #72FFD2 100%)'
         }}>
-        <h1 className="text-2xl font-bold mb-4 text-white">match the emotion!</h1>
+          <img    
+          src="ripple.png"
+          alt="Background Overlay"
+          className="absolute inset-0 object-cover w-full h-full opacity-30"
+          />
+        <h1 className="text-2xl font-bold mb-4 text-white">Match the Emotion!</h1>
         {error && <p className="text-red-500 mb-4">{error}</p>}
+        
+        {detectedEmotion && (
+          <div className="mb-4 p-2 bg-white bg-opacity-50 rounded">
+            <p className="text-gray-800">Detected Emotion: <strong>{detectedEmotion.emotion}</strong></p>
+            <p className="text-gray-800">Confidence: <strong>{detectedEmotion.confidence.toFixed(2)}%</strong></p>
+          </div>
+        )}
+
         <div className="relative" ref={videoContainerRef}>
           <img
             src="lilypad.png"
-            alt="lilypad"
+            alt="Lilypad"
             className="absolute -bottom-24 -right-20 w-60 h-60"
           />
           <img
             src={animationFrames[currentEmotionIndex][currentFrameIndex]}
-            alt="animated mascot"
+            alt="Animated Mascot"
             className="absolute -bottom-20 -right-20 w-60 h-60"
           />
+          <div className="rounded-md bg-white absolute -right-24 bottom-36 w-48 p-4">
+            <p>{chatResult}</p>
+          </div>
           <video
             ref={videoRef}
             autoPlay
@@ -145,8 +304,10 @@ export default function WebcamPage() {
               <p className="text-gray-500">Webcam is off</p>
             </div>
           )}
+          {/* Hidden canvas element */}
+          <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
         </div>
-        <div className="mt-4">
+        <div className="mt-4 z-[9999]">
           <Button onClick={startWebcam} disabled={isStreamActive} className="mr-2">
             Start Webcam
           </Button>
@@ -164,7 +325,7 @@ export default function WebcamPage() {
         <div className="absolute bottom-16 right-8 p-4">
           <img
             src="flower_lilypad.png"
-            alt="flower"
+            alt="Flower"
             className="object-contain w-20 h-20 -rotate-12"
           />
         </div>
