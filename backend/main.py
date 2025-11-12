@@ -20,7 +20,7 @@ progress = {
     "emotion_stats": {}
 }
 
-#HOW DO I MAKE THIS API CALL
+#HOW DO I MAKE THIS API CALL. IDK
 pinata_api_key = os.getenv('PINATA_API_KEY')
 pinata_api_secret = os.getenv('PINATA_API_SECRET')
 # client = Pinata(api_key=pinata_api_key, api_secret=pinata_api_secret)
